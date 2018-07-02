@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cli/plugin"
+	"code.cloudfoundry.org/cli/plugin/models"
 )
 
 type runAndWait struct{}
@@ -70,15 +71,10 @@ func (c *runAndWait) Run(cliConnection plugin.CliConnection, args []string) {
 		appName := args[1]
 		cmd := args[2]
 
-		fmt.Println("Getting app id...")
-		app, err := cliConnection.GetApp(appName)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+		app := GetApp(cliConnection, appName)
 
 		b := &bytes.Buffer{}
-		err = json.NewEncoder(b).Encode(&runTaskReq{Command: cmd})
+		err := json.NewEncoder(b).Encode(&runTaskReq{Command: cmd})
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
@@ -105,42 +101,8 @@ func (c *runAndWait) Run(cliConnection plugin.CliConnection, args []string) {
 			os.Exit(1)
 		}
 
-		fmt.Println("Task ID:", tr.Guid)
+		WaitForCompletion(cliConnection, tr.Guid)
 
-		sleepTime := time.Second
-		for {
-			fmt.Printf("Sleeping for %0.0f seconds...\n", float64(sleepTime)/float64(time.Second))
-			time.Sleep(sleepTime)
-
-			fmt.Println("Getting task status...")
-			out, err = cliConnection.CliCommandWithoutTerminalOutput("curl", fmt.Sprintf("/v3/tasks/%s", tr.Guid))
-			if err != nil {
-				os.Exit(1)
-			}
-
-			fullS := strings.Join(out, "\n")
-
-			var ts taskStatus
-			err = json.NewDecoder(bytes.NewReader([]byte(fullS))).Decode(&ts)
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-
-			fmt.Println("Result:", ts.State)
-
-			switch ts.State {
-			case "SUCCEEDED":
-				return // happy
-
-			case "FAILED":
-				fmt.Println(fullS)
-				os.Exit(1)
-
-			default:
-				sleepTime *= 2
-			}
-		}
 	} else if args[0] == "wait" {
 		if len(args) != 3 {
 			fmt.Println("Expected 2 args: APPNAME TASK")
@@ -149,12 +111,7 @@ func (c *runAndWait) Run(cliConnection plugin.CliConnection, args []string) {
 		appName := args[1]
 		task := args[2]
 
-		fmt.Println("Getting app id...")
-		app, err := cliConnection.GetApp(appName)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+		app := GetApp(cliConnection, appName)
 
 		fmt.Println("Getting task id...")
 		out, err := cliConnection.CliCommandWithoutTerminalOutput("curl", "-H", "Content-Type: application/json", fmt.Sprintf("/v3/apps/%s/tasks?names=%s", app.Guid, task))
@@ -171,7 +128,8 @@ func (c *runAndWait) Run(cliConnection plugin.CliConnection, args []string) {
 		}
 
 		if gtr.Pagination.TotalResults != 1 {
-			fmt.Println(fmt.Sprintf("Invalid number of tasks for name %s: %s", task, gtr.Pagination.TotalResults))
+			fmt.Println(fmt.Sprintf("Invalid number of tasks found for name %s: %s", task, gtr.Pagination.TotalResults))
+			os.Exit(1)
 		}
 
 		if gtr.Resources[0].Guid == "" {
@@ -179,41 +137,56 @@ func (c *runAndWait) Run(cliConnection plugin.CliConnection, args []string) {
 			os.Exit(1)
 		}
 
-		fmt.Println("Task ID:", gtr.Resources[0].Guid)
+		WaitForCompletion(cliConnection, gtr.Resources[0].Guid)
+	}
+}
 
-		sleepTime := time.Second
-		for {
-			fmt.Printf("Sleeping for %0.0f seconds...\n", float64(sleepTime)/float64(time.Second))
-			time.Sleep(sleepTime)
+func GetApp(cliConnection plugin.CliConnection, appName string) plugin_models.GetAppModel {
+	fmt.Println("Getting app id...")
+	app, err := cliConnection.GetApp(appName)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	fmt.Println("App ID:", app.Guid)
+	return app
+}
 
-			fmt.Println("Getting task status...")
-			out, err = cliConnection.CliCommandWithoutTerminalOutput("curl", fmt.Sprintf("/v3/tasks/%s", gtr.Resources[0].Guid))
-			if err != nil {
-				os.Exit(1)
-			}
+func WaitForCompletion(cliConnection plugin.CliConnection, taskId string) {
+	fmt.Println("Task ID:", taskId)
 
-			fullS := strings.Join(out, "\n")
+	sleepTime := time.Second
+	for {
+		fmt.Printf("Sleeping for %0.0f seconds...\n", float64(sleepTime)/float64(time.Second))
+		time.Sleep(sleepTime)
 
-			var ts taskStatus
-			err = json.NewDecoder(bytes.NewReader([]byte(fullS))).Decode(&ts)
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
+		fmt.Println("Getting task status...")
+		out, err := cliConnection.CliCommandWithoutTerminalOutput("curl", fmt.Sprintf("/v3/tasks/%s", taskId))
+		if err != nil {
+			os.Exit(1)
+		}
 
-			fmt.Println("Result:", ts.State)
+		fullS := strings.Join(out, "\n")
 
-			switch ts.State {
-			case "SUCCEEDED":
-				return // happy
+		var ts taskStatus
+		err = json.NewDecoder(bytes.NewReader([]byte(fullS))).Decode(&ts)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 
-			case "FAILED":
-				fmt.Println(fullS)
-				os.Exit(1)
+		fmt.Println("Result:", ts.State)
 
-			default:
-				sleepTime *= 2
-			}
+		switch ts.State {
+		case "SUCCEEDED":
+			return // happy
+
+		case "FAILED":
+			fmt.Println(fullS)
+			os.Exit(1)
+
+		default:
+			sleepTime *= 2
 		}
 	}
 }
