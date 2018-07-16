@@ -165,7 +165,7 @@ func waitForCompletion(cliConnection plugin.CliConnection, taskID string) error 
 
 		case "FAILED":
 			fmt.Println(fullS)
-			return err
+			return errors.New("task failed")
 
 		default:
 			sleepTime *= 2
@@ -179,7 +179,7 @@ func (c *runAndWait) GetMetadata() plugin.PluginMetadata {
 		Version: plugin.VersionType{
 			Major: 0,
 			Minor: 2,
-			Build: 0,
+			Build: 1,
 		},
 		MinCliVersion: plugin.VersionType{
 			Major: 6,
