@@ -2,17 +2,22 @@
 
 
 [[projects]]
+  digest = "1:f0e1bc4562c35f62b577a7a0be0fb0657f2805c637c2ac69d92b3a7d2fd91f1b"
   name = "code.cloudfoundry.org/cli"
   packages = [
     "plugin",
-    "plugin/models"
+    "plugin/models",
   ]
-  revision = "bbdf81482f6cfa6281b1937f23cea3162b976351"
-  version = "v6.34.1"
+  pruneopts = "UT"
+  revision = "5f9ff16f99a0345f98f147765db0e36aef91c795"
+  version = "v6.45.0"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c307f9bc76e6835bb62cd7c4471527a0892545b6c782d8942718b0f9be3297ea"
+  input-imports = [
+    "code.cloudfoundry.org/cli/plugin",
+    "code.cloudfoundry.org/cli/plugin/models",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1
