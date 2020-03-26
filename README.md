@@ -21,6 +21,8 @@ If successful, will exit with status code of `0`.
 
 If it fails, will print some debug info, and exit with non-zero status code.
 
+Logs will be streamed while it runs.
+
 ## Building a new release
 
 ```bash
