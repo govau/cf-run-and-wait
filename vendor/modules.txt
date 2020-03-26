@@ -1,0 +1,21 @@
+# code.cloudfoundry.org/cli v6.49.0+incompatible
+code.cloudfoundry.org/cli/plugin
+code.cloudfoundry.org/cli/plugin/models
+# github.com/cloudfoundry/noaa v2.1.0+incompatible
+github.com/cloudfoundry/noaa
+github.com/cloudfoundry/noaa/consumer
+github.com/cloudfoundry/noaa/consumer/internal
+github.com/cloudfoundry/noaa/errors
+# github.com/cloudfoundry/sonde-go v0.0.0-20171206171820-b33733203bb4
+github.com/cloudfoundry/sonde-go/events
+# github.com/gogo/protobuf v1.3.1
+github.com/gogo/protobuf/gogoproto
+github.com/gogo/protobuf/proto
+github.com/gogo/protobuf/protoc-gen-gogo/descriptor
+# github.com/gorilla/websocket v1.4.1
+github.com/gorilla/websocket
+# github.com/mailru/easyjson v0.7.0
+github.com/mailru/easyjson
+github.com/mailru/easyjson/buffer
+github.com/mailru/easyjson/jlexer
+github.com/mailru/easyjson/jwriter
